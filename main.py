@@ -1,4 +1,8 @@
-import pandas as pd
+from time import sleep  # modul for å sette på vent
+import pandas as pd  # modul for å importere og eksportere data
+from termcolor import colored  # modul for å fargelegge tekst i terminalen
+from rich.table import Table  # modul for å lage tabeller
+from rich.console import Console  # modul for å printe tabeller til terminalen
 
 file = pd.read_excel('recalculated-nordic-system-price.xlsx')  # leser inn excel-fil
 
@@ -12,20 +16,15 @@ hours = [i for i in range(0, 24)]  # lager en liste over timer i en dag
 prices = file.get('System Price(Eur/MWh)')  # henter ut prisene fra excel filen
 prices = [float(i) for i in prices]  # konverterer prisene til desimaltall
 
-# priceAndDate = {}  # lager en tom dicitonary for å lagre pris til dato
-
-# for date in dates:
-#     if dates.index(date) != 0:  # finner startposisjonen til prisen så lenge det ikke er første datoen
-#         endPos = dates.index(date) * 24  # sjekker hvilken posisjon i listen som datoen er på
-#         starPos = endPos - dates.index(date) * 24
-#     else:  # setter startPos til 0 og endPos til 24 om det er første dato
-#         endPos = 24
-#         starPos = 0
-
-#     for hour in hours:  # looper for hver time i en dag og bruker starPos, endPos for å legge pris til time
-#         priceAndDate[date][hour] = prices[starPos:endPos]
-
 priceInfo = {}  # lager en tom dictionary som vil bli fylt med dato, tidspunkt og pris.
+# dette er en model for hvordan dataen skal se ut i denne dictionaryen
+# priceInfo = {
+#     '2021-11-10': {
+#         '0': 12.78,
+#         '1': 14.54,
+#         '2': 13.60,
+#     }
+# }
 for date in dates:  # looper for hver dato i listen
     if date not in priceInfo:  # sjekker om datoen ikke er i dicitonary så det ikke blir duplikater
         priceInfo[date] = {}  # legger dato til i dictionary om den ikke allerede er der
@@ -40,15 +39,26 @@ for date in dates:  # looper for hver dato i listen
     for hour in hours:  # looper for hver time i en dag
         priceInfo[date][hour] = hourPrices[hour]  # legger time til dato, og pris til time i dictionary
 
-# denne er kun for å sjekke at output av koden er rett
-for key, value in priceInfo.items():  # looper for hver "key" og "value" i dictionary
-    print(key, value)  # printer key og value
-
-# dette er en model for hvordan dataen skal se ut i dictionary
-priceInfo = {
-    '2021-11-10': {
-        '0': 12.78,
-        '1': 14.54,
-        '2': 13.60,
-    }
-}
+keys = priceInfo.keys()  # lagrer alle keys i en variabel
+console = Console()
+while True:
+    print("\n")
+    print(colored("Dates:", "green"))
+    for key in keys:
+        print(key)
+    print("\n")
+    date = input(colored('Enter the date you want to see the price for (YYYY-MM-DD): ', "green"))  # spør bruker om hvilken dato de vil se pris for
+    if date in keys:  # hvis datoen er i dictionary
+        print(colored("\nPrice per hour:", "green"))  # print ut en overskrift
+        table = Table(box=None)  # lager en tabell for billetter og priser
+        table.add_column()  # legger til en kolonne for *
+        table.add_column()  # legger til en kolonne for time
+        table.add_column()  # legger til en kolonne for pris
+        table.add_column()  # legger til en kolonne for øre
+        for hour in priceInfo[date]:  # looper gjennom timene og legger til i tabellen
+            table.add_row(colored("*", "yellow"), f"{hour}:00", colored(f"{round(priceInfo[date][hour] / 100 ,2)}", "green"), colored("Kr", "green"))
+        console.print(table)  # printer tabellen til terminalen
+        print("\n")
+        exit()  # avslutt programmet
+    else:
+        print('The date you entered is not in the file')  # hvis datoen ikke er i dictionary
